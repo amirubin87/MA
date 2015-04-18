@@ -264,7 +264,6 @@ def generate_dendrogram(graph, part_init = None, splitNodesInL1 = False) :
         mod = new_mod
         current_graph = induced_graph(partition, current_graph)
         status.init(current_graph)
-    print(mod)
     return status_list[:]
 
 
@@ -497,7 +496,6 @@ def __getCommsFromPartition(partition) :
     for comsSet in partition.values():
         for com in comsSet:
             ans.add(com)
-    print (ans)
     return ans
 
 def __modularity(status) :
