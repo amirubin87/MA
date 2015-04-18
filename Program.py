@@ -15,3 +15,13 @@ for keys,values in part.items():
     print(values)
     
 print(community_package.modularity(part, G))
+
+output = open('output.txt','w')
+for keys,values in part.items():
+    output.write(keys)
+    output.write('\t')
+    for val in values :
+        output.write(str(val))
+        output.write(" ")
+    output.write('\n')
+output.close() 
