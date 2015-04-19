@@ -8,10 +8,12 @@ from CompareUtils import *
 '''-------------------------------------------
                     MAIN
 -------------------------------------------'''
-
-groundTruthFile = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/community.dat" , "r")
+#TODO - read file name from user
+print("fileName(no extension):")
+fileName = input()
+groundTruthFile = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/community" + fileName + ".dat" , "r")
 groundTruth = convertFileToPartition(groundTruthFile)
-louvainOutputFile = open("C:/LiClipse Workspace/MA/MA/output.txt" , "r")
+louvainOutputFile = open("C:/LiClipse Workspace/MA/MA/output" + fileName + ".txt" , "r")
 louvainOutput = convertFileToPartition(louvainOutputFile)
 
 print("groundTruth:   {0}".format(groundTruth))
