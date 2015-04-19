@@ -16,7 +16,6 @@ __PASS_MAX = -1
 __MIN = 0.0000001
 
 import networkx as nx
-import array
 
 
 def partition_at_level(dendrogram, level) :
@@ -63,6 +62,10 @@ def partition_at_level(dendrogram, level) :
 
 def modularity(partition, graph) :
     """Compute the modularity of a partition of a graph
+    
+    ! If nodes can be in more than one comm - 
+        for each node will iterate throw all, in each comm, for each neighbor, 
+        if he is also in the given comm, the value is increased.
 
     Parameters
     ----------
@@ -153,36 +156,12 @@ def best_partition(graph, partition = None) :
 
     Notes
     -----
-    Uses Louvain algorithm
+    Uses Louvain algorithm, with the ability of overlapping comms
 
     References
     ----------
     .. 1. Blondel, V.D. et al. Fast unfolding of communities in large networks. J. Stat. Mech 10008, 1-12(2008).
-
-    Examples
-    --------
-    >>>  #Basic usage
-    >>> G=nx.erdos_renyi_graph(100, 0.01)
-    >>> part = best_partition(G)
-
-    >>> #other example to display a graph with its community :
-    >>> #better with karate_graph() as defined in networkx examples
-    >>> #erdos renyi don't have true community structure
-    >>> G = nx.erdos_renyi_graph(30, 0.05)
-    >>> #first compute the best partition
-    >>> partition = community.best_partition(G)
-    >>>  #drawing
-    >>> size = float(len(set(partition.values())))
-    >>> pos = nx.spring_layout(G)
-    >>> count = 0.
-    >>> for com in set(partition.values()) :
-    >>>     count = count + 1.
-    >>>     list_nodes = [nodes for nodes in partition.keys()
-    >>>                                 if partition[nodes] == com]
-    >>>     nx.draw_networkx_nodes(G, pos, list_nodes, node_size = 20,
-                                    node_color = str(count / size))
-    >>> nx.draw_networkx_edges(G,pos, alpha=0.5)
-    >>> plt.show()
+    .. 2. TBD
     """
     dendo = generate_dendrogram(graph, partition)
     return partition_at_level(dendo, len(dendo) - 1 )
@@ -192,7 +171,9 @@ def generate_dendrogram(graph, part_init = None, splitNodesInL1 = False) :
 
     A dendrogram is a tree and each level is a partition of the graph nodes.  Level 0 is the first partition, which contains the smallest communities, and the best is len(dendrogram) - 1. The higher the level is, the bigger are the communities
 
-
+    ! If nodes can be in more than one comm -
+        only in the first step we give the nodes that option.
+        
     Parameters
     ----------
     graph : networkx.Graph
@@ -272,7 +253,21 @@ def induced_graph(partition, graph) :
     """Produce the graph where nodes are the communities
 
     there is a link of weight w between communities if the sum of the weights of the links between their elements is w
-
+    
+    ! If nodes can be in more than one comm -
+        the weight between two nodes in the induced graph will  be the sum of weights
+        between nodes in the comms the nodes represents.
+        
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        
+        NOTICE: if nodes u and v are both in comms c1 and c2,
+                and the weight is w, we will count it TWICE:
+                once when we check the copy of u in c1 and v in c2
+                and once for the copy of u in c2 and v in c1!
+        TODO: This should be reconsidered!
+         
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
     Parameters
     ----------
     partition : dict
@@ -300,15 +295,18 @@ def induced_graph(partition, graph) :
     """
     ret = nx.Graph()
     
-    for comms in partition.values() :
-        ret.add_nodes_from(comms)
+    #get all comms, and set them as nodes in the induced graph
+    ret.add_nodes_from(__getCommsFromPartition(partition))
+    
     for node1, node2, datas in graph.edges_iter(data = True) :
         weight = datas.get("weight", 1)
         coms1 = partition[node1]
         coms2 = partition[node2]
         for com1 in coms1 :
             for com2 in coms2 :
+                #get the old edge weight
                 w_prec = ret.get_edge_data(com1, com2, {"weight":0}).get("weight", 1)
+                #set the new edge weight
                 ret.add_edge(com1, com2, weight = w_prec + weight)
 
     return ret
@@ -337,6 +335,9 @@ def __renumberComms(dictionary) :
 def __one_level(graph, status, splitNodesInL1 = False) :
     
     """Compute one level of communities
+    ! If nodes can be in more than one comm -
+        FIRST IMPLEMETATION NOT SUPPORTING MULTIPLE COMMS PER NODE.
+        TODO
     """
     modif = True
     nb_pass_done = 0
@@ -366,7 +367,7 @@ def __one_level(graph, status, splitNodesInL1 = False) :
                     #for now, one com only(TODO!)
                     best_coms = [com]
 
-            # add node to all coms find fit for
+            # todo - add node to all relevant comms
             for best_com in best_coms :
                 __insert(node, best_com,
                         neigh_communities.get(best_com, 0.), status)
@@ -458,13 +459,25 @@ def __neighcom(node, graph, status) :
     """
     Compute the communities in the neighborood of node in the graph given
     with the decomposition node2com
+    
+    ! If nodes can be in more than one comm - 
+        for each neighbor we will check in each comm he is in, and will update its weight.
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        
+        NOTICE: if nodes u and v are both in comms c1 and c2,
+                and we now work on u - 
+                when we look at his neighborhood comms, both c1 and c2
+                are calculated when v is treated.
+                The fact the u is in both DOESNT EFFECT ANYTHING.
+                 
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
     """
     weights = {}
     for neighbor, datas in graph[node].items() :
         if neighbor != node :
             weight = datas.get("weight", 1)
-            neighborcoms = status.node2com[neighbor]
-            
+            neighborcoms = status.node2com[neighbor]            
             for neighborcom in neighborcoms :
                 weights[neighborcom] = weights.get(neighborcom, 0) + weight
             
@@ -472,12 +485,12 @@ def __neighcom(node, graph, status) :
 
 
 def __remove(node, com, weight, status, splitNodesInL1 = False) :
-    """ Remove node from community com and modify status"""
+    """ For a node WHICH WAS REMVOD from a community com, we modify status"""
     status.degrees[com] = ( status.degrees.get(com, 0.)
                                     - status.gdegrees.get(node, 0.) )
     status.internals[com] = float( status.internals.get(com, 0.) -
                 weight - status.loops.get(node, 0.) )
-    #ALready poped the com from the list!
+    #This is not needed - already poped the com from the list!
     #status.node2com[node].remove(com)
 
 def __insert(node, com, weight, status, splitNodesInL1 = False) :
@@ -490,7 +503,7 @@ def __insert(node, com, weight, status, splitNodesInL1 = False) :
 
 def __getCommsFromPartition(partition) :
     """
-    return a set of all comms
+    Return a set of all comms
     """
     ans = set()
     for comsSet in partition.values():
@@ -505,11 +518,7 @@ def __modularity(status) :
     links = float(status.total_weight)
     result = 0.
     #get sets of comms from the dict
-    commsSets = list(status.node2com.values())
-    #generate set of comms by unioning all sets of comms
-    commsSet = commsSets[0]
-    for comms in commsSets :
-        commsSet = commsSet.union(comms)
+    commsSet = __getCommsFromPartition(status.node2com)
     for community in commsSet :        
         in_degree = status.internals.get(community, 0.)
         degree = status.degrees.get(community, 0.)
