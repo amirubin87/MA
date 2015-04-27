@@ -4,6 +4,10 @@ Created on Apr 18, 2015
 @author: t-amirub
 '''
 from CompareUtils import *
+
+import networkx as nx
+import MyLouvain as community_package
+
 class color:
    PURPLE = '\033[95m'
    CYAN = '\033[96m'
@@ -24,6 +28,33 @@ print("inputFileDirName(no extension):")
 inputFileDirName = input()
 print("louvainOutputFileName(no extension):")
 louvainOutputFileName = input()
+
+file = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/"+inputFileDirName+"/network.dat" , "rb")
+G=nx.read_weighted_edgelist(file)
+
+
+#New
+part = community_package.best_partition(G,True)
+#for keys,values in part.items():
+#    print(keys)
+#    print(values)
+
+print("     MyLouvain.modularity {0}".format(community_package.modularity(part, G)))
+print("     ")
+
+
+output = open("MyLouvainOutput" + louvainOutputFileName + ".txt",'w')
+for keys,values in part.items():
+    output.write(keys)
+    output.write('\t')
+    for val in values :
+        output.write(str(val))
+        output.write(" ")
+    output.write('\n')
+output.close()
+
+
+
 groundTruthFile = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/"+inputFileDirName+"/community.dat" , "r")
 groundTruth = convertFileToPartition(groundTruthFile)
 louvainOutputFile = open("C:/LiClipse Workspace/MA/MA/MyLouvainOutput" + louvainOutputFileName + ".txt" , "r")

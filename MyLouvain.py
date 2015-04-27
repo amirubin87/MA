@@ -14,7 +14,7 @@ This module implements community detection.
 
 __PASS_MAX = -1
 __MIN = 0.0000001
-
+___MODULARITYTH = 0.5
 import networkx as nx
 
 
@@ -132,7 +132,7 @@ def modularity(partition, graph) :
     return res
 
 
-def best_partition(graph, partition = None) :
+def best_partition(graph, SplitNodesInL1 = False, partition = None) :
     """Compute the partition of the graph nodes which maximises the modularity
     (or try..) using the Louvain heuristices
 
@@ -169,10 +169,10 @@ def best_partition(graph, partition = None) :
     .. 1. Blondel, V.D. et al. Fast unfolding of communities in large networks. J. Stat. Mech 10008, 1-12(2008).
     .. 2. TBD
     """
-    dendo = generate_dendrogram(graph, partition)
+    dendo = generate_dendrogram(graph, partition,SplitNodesInL1)
     return partition_at_level(dendo, len(dendo) - 1 )
 
-def generate_dendrogram(graph, part_init = None, splitNodesInL1 = False) :
+def generate_dendrogram(graph, part_init = None, SplitNodesInL1 = False) :
     """Find communities in the graph and return the associated dendrogram
 
     A dendrogram is a tree and each level is a partition of the graph nodes.  Level 0 is the first partition, which contains the smallest communities, and the best is len(dendrogram) - 1. The higher the level is, the bigger are the communities
@@ -186,7 +186,7 @@ def generate_dendrogram(graph, part_init = None, splitNodesInL1 = False) :
         the networkx graph which will be decomposed
     part_init : dict, optionnal
         the algorithm will start using this partition of the nodes. It's a dictionary where keys are their nodes and values the communities
-    splitNodesInL1: bool
+    IsInL1: bool
         when true, nodes will be duplicated in the first level.
     Returns
     -------
@@ -217,6 +217,8 @@ def generate_dendrogram(graph, part_init = None, splitNodesInL1 = False) :
     >>> for level in range(len(dendo) - 1) :
     >>>     print "partition at level", level, "is", partition_at_level(dendo, level)
     """
+    print("MY graph.number_of_edges(): {0}".format(graph.number_of_edges()))
+    print("MY graph.number_of_nodes(): {0}".format(graph.number_of_nodes()))
     if type(graph) != nx.Graph :
         raise TypeError("Bad graph type, use only non directed graph")
 
@@ -232,9 +234,11 @@ def generate_dendrogram(graph, part_init = None, splitNodesInL1 = False) :
     status = Status()
     status.init(current_graph, part_init)  
     status_list = list()
-    __one_level(current_graph, status, splitNodesInL1)
+    __one_level(current_graph, status, SplitNodesInL1)
     new_mod = __modularity(status)
     partition = __renumberComms(status.node2com)
+    print("MY L1  Louvain  partition after one level:   {0}".format(partition))
+    print("MY L1 Louvain  new_mod in while: {0}".format(new_mod))
     status_list.append(partition)
     mod = new_mod
     current_graph = induced_graph(partition, current_graph)
@@ -245,14 +249,19 @@ def generate_dendrogram(graph, part_init = None, splitNodesInL1 = False) :
         print("")
         print("")
         print("MY         ENTERED WHILE")
-
+        print("MY current_graph.number_of_edges(): {0}".format(current_graph.number_of_edges()))
+        print("MY current_graph.number_of_nodes(): {0}".format(current_graph.number_of_nodes()))
+        print("")
         __one_level(current_graph, status)
-        print("My  Louvain  status.node2com after one level:   {0}".format(status.node2com))
         new_mod = __modularity(status)
-        print("my Louvain  new_mod in while: {0}".format(new_mod))
+        print("MY Louvain  new_mod in while: {0}".format(new_mod))
+        partition = __renumberComms(status.node2com)
+        print("MY  Louvain  partition after one level:   {0}".format(partition))
+        print("MY Louvain  new_mod in while: {0}".format(new_mod))
+        #TODO - move this is to before the "renumberComms"
+        print("MY   newMod: {0} mod: {1}".format(new_mod,mod))
         if new_mod - mod < __MIN :
             break
-        partition = __renumberComms(status.node2com)
         status_list.append(partition)
         mod = new_mod
         current_graph = induced_graph(partition, current_graph)
@@ -325,17 +334,18 @@ def induced_graph(partition, graph) :
 
 
 def __renumberComms(dictionary) :
-    """Renumber the values of the dictionary from 0 to n
+    """Renumber the comms in the values of the dictionary from 0 to n
     """
     count = 0
     ret = dictionary.copy()
     new_values = dict([])
     for key in dictionary.keys() :
         newSet = set()
-        for value in dictionary[key]:
-            new_value = new_values.get(value, -1)
+        comms = dictionary[key]
+        for comm in comms:
+            new_value = new_values.get(comm, -1)
             if new_value == -1 :
-                new_values[value] = count
+                new_values[comm] = count
                 new_value = count
                 count = count + 1
             newSet.add(new_value)
@@ -343,8 +353,8 @@ def __renumberComms(dictionary) :
 
     return ret
 
-#! splitNodesInL1 - when true nodes will be splitted!
-def __one_level(graph, status, splitNodesInL1 = False) :
+#! IsInL1 - when true nodes will be splitted!
+def __one_level(graph, status, IsInL1 = False) :
     
     """Compute one level of communities
     ! If nodes can be in more than one comm -
@@ -354,8 +364,8 @@ def __one_level(graph, status, splitNodesInL1 = False) :
     modif = True
     nb_pass_done = 0
     cur_mod = __modularity(status)
-    print("My     cur_mod when enter oneLevel: {0}".format(cur_mod))
-    print("My     status.total_weight when enter oneLevel: {0}".format(status.total_weight))
+    print("MY     cur_mod when enter oneLevel: {0}".format(cur_mod))
+    print("MY     status.total_weight when enter oneLevel: {0}".format(status.total_weight))
     new_mod = cur_mod
 
     while modif  and nb_pass_done != __PASS_MAX :
@@ -368,6 +378,7 @@ def __one_level(graph, status, splitNodesInL1 = False) :
             degc_totw = status.gdegrees.get(node, 0.) / (status.total_weight*2.)
             neigh_communities = __neighcom(node, graph, status)
             best_coms = coms_node.copy()
+            comsNMods = []
             # remove node from all coms he is in
             while coms_node :
                 com_node = coms_node.pop()
@@ -377,7 +388,25 @@ def __one_level(graph, status, splitNodesInL1 = False) :
 
             for com, dnc in neigh_communities.items() :
                 incr =  dnc  - status.degrees.get(com, 0.) * degc_totw
-                #print("My  com:{0} status.degrees:   {1}".format(com,status.degrees))
+
+                ##########################################################
+                if IsInL1 and incr + ___MODULARITYTH >= best_increase:
+                    #Add com
+                    comsNMods.append([com, incr])
+                    #sort - TODO, work with sortedArray
+                    comsNMods = sorted(comsNMods, key = lambda comNMod : comNMod[1])
+                    #if we have a new best increase - we need to move comms that are no longer relevant
+                    if (incr > best_increase):
+                        best_increase = incr
+                        tmpBestComs = [comNMod[0] for comNMod in comsNMods if comNMod[1]+ ___MODULARITYTH >= best_increase]
+                        best_coms = tmpBestComs.copy()
+                #not in L1
+                else :
+                    if incr > best_increase :
+                            best_increase = incr
+                            #for now, one com only(TODO!)
+                            best_coms = [com]
+                ############################################################
 
                 if incr > best_increase :
                     best_increase = incr
@@ -500,7 +529,7 @@ def __neighcom(node, graph, status) :
     return weights
 
 
-def __remove(node, com, weight, status, splitNodesInL1 = False) :
+def __remove(node, com, weight, status, IsInL1 = False) :
     """ For a node WHICH WAS REMVOD from a community com, we modify status"""
     status.degrees[com] = ( status.degrees.get(com, 0.)
                                     - status.gdegrees.get(node, 0.) )
@@ -509,7 +538,7 @@ def __remove(node, com, weight, status, splitNodesInL1 = False) :
     #This is not needed - already poped the com from the list!
     #status.node2com[node].remove(com)
 
-def __insert(node, com, weight, status, splitNodesInL1 = False) :
+def __insert(node, com, weight, status, IsInL1 = False) :
     """ Insert node into community and modify status"""
     status.node2com[node].add(com)
     status.degrees[com] = (status.degrees.get(com, 0.) +
@@ -543,5 +572,3 @@ def __modularity(status) :
         if links > 0 :
             result = result + in_degree / links - ((degree / (2.*links))**2)
     return result
-
-

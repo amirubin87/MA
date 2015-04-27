@@ -16,7 +16,7 @@ G=nx.read_weighted_edgelist(file)
 
 
 #New
-part = community_package.best_partition(G)
+part = community_package.best_partition(G,True)
 #for keys,values in part.items():
 #    print(keys)
 #    print(values)
