@@ -373,7 +373,6 @@ def __one_level(graph, status, splitNodesInL1 = False) :
                 com_node = coms_node.pop()
                 __remove(node, com_node,
                     neigh_communities.get(com_node, 0.), status)
-            print("my best coms after removing: {0}".format(best_coms))
             best_increase = 0
 
             for com, dnc in neigh_communities.items() :

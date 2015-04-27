@@ -45,14 +45,6 @@ def partition_at_level(dendrogram, level) :
     partition = dendrogram[0].copy()
     for index in range(1, level + 1) :
         for node, community in partition.items() :
-            print("")
-            print("OR node:{0}".format(node))
-            print("MOR partition[node]:{0}".format(partition[node]))
-            print("OR index:{0}".format(index))
-            print("OR dendrogram[index]:{0}".format(dendrogram[index]))
-            print("OR community:{0}".format(community))
-            print("OR dendrogram[index][community]:{0}".format(dendrogram[index][community]))
-            print("")
             partition[node] = dendrogram[index][community]
     return partition
 
@@ -387,7 +379,6 @@ def __one_level(graph, status) :
 
             best_com = com_node
             best_increase = 0
-            print("or best com after removing: {0}".format(best_com))
 
             for com, dnc in neigh_communities.items() :
                 #TODOD -status.degrees dont match!
