@@ -34,7 +34,7 @@ def sortBySmallestNode(com2Nodes):
     
 def convertFileToPartition(file):
     '''
-    Takes a file with a dict in it and tranlate to a dict of node 2 comm.
+    Takes a file with a dict in it and translate to a dict of node 2 comm.
     Parameters
     ----------
     file : File
@@ -51,7 +51,26 @@ def convertFileToPartition(file):
         comms = line.split('\t')[1].split(' ')
         comms.pop()
         ans[node] = comms
-    return ans
+    return __renumberComms(ans)
+
+def __renumberComms(dictionary) :
+    """Renumber the values of the dictionary from 0 to n
+    """
+    count = 0
+    ret = dictionary.copy()
+    new_values = dict([])
+    for key in dictionary.keys() :
+        newSet = set()
+        for value in dictionary[key]:
+            new_value = new_values.get(value, -1)
+            if new_value == -1 :
+                new_values[value] = count
+                new_value = count
+                count = count + 1
+            newSet.add(new_value)
+        ret[key] = newSet
+
+    return ret
 
 def com2Nodes(partition):
     '''
@@ -73,3 +92,4 @@ def com2Nodes(partition):
             ans[comm].add(int(node))
             ans[comm]
     return sortBySmallestNode(ans)
+

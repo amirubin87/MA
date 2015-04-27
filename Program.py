@@ -7,9 +7,11 @@ Created on Mar 24, 2015
 import networkx as nx
 import MyLouvain as community_package
 import OriginalLouvain
-print("fileName(no extension):")
-fileName = input()
-file = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/network"+ fileName+ ".dat" , "rb")
+print("inputFileDirName(no extension):")
+inputFileDirName = input()
+print("outputFileName(no extension):")
+outputFileName = input()
+file = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/"+inputFileDirName+"/network.dat" , "rb")
 G=nx.read_weighted_edgelist(file)
 
 
@@ -23,7 +25,7 @@ print("     MyLouvain.modularity {0}".format(community_package.modularity(part, 
 print("     ")
 
 
-output = open("output" + fileName + ".txt",'w')
+output = open("MyLouvainOutput" + outputFileName + ".txt",'w')
 for keys,values in part.items():
     output.write(keys)
     output.write('\t')
