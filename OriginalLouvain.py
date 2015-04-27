@@ -45,6 +45,14 @@ def partition_at_level(dendrogram, level) :
     partition = dendrogram[0].copy()
     for index in range(1, level + 1) :
         for node, community in partition.items() :
+            print("")
+            print("OR node:{0}".format(node))
+            print("MOR partition[node]:{0}".format(partition[node]))
+            print("OR index:{0}".format(index))
+            print("OR dendrogram[index]:{0}".format(dendrogram[index]))
+            print("OR community:{0}".format(community))
+            print("OR dendrogram[index][community]:{0}".format(dendrogram[index][community]))
+            print("")
             partition[node] = dendrogram[index][community]
     return partition
 
@@ -244,12 +252,16 @@ def generate_dendrogram(graph, part_init = None) :
     status_list.append(partition)
     mod = new_mod
     current_graph = induced_graph(partition, current_graph)
-    print("Original Louvain  induced_graph nodes L1: {0}".format(current_graph.nodes()))
-    print("Original Louvain  induced_graph edges L1: {0}".format(current_graph.edges(data=True)))
+
+
 
     status.init(current_graph)
     while True :
+        print("")
+        print("")
+        print("Original         ENTERED WHILE")
         __one_level(current_graph, status)
+        print("Original  Louvain  status.node2com after one level:   {0}".format(status.node2com))
         new_mod = __modularity(status)
         print("Original Louvain  new_mod in while: {0}".format(new_mod))
         if new_mod - mod < __MIN :
@@ -357,6 +369,8 @@ def __one_level(graph, status) :
     modif = True
     nb_pass_done = 0
     cur_mod = __modularity(status)
+    print("original     cur_mod when enter oneLevel: {0}".format(cur_mod))
+    print("original     status.total_weight when enter oneLevel: {0}".format(status.total_weight))
     new_mod = cur_mod
 
     while modif  and nb_pass_done != __PASS_MAX :
@@ -370,13 +384,20 @@ def __one_level(graph, status) :
             neigh_communities = __neighcom(node, graph, status)
             __remove(node, com_node,
                     neigh_communities.get(com_node, 0.), status)
+
             best_com = com_node
             best_increase = 0
+            print("or best com after removing: {0}".format(best_com))
+
             for com, dnc in neigh_communities.items() :
+                #TODOD -status.degrees dont match!
                 incr =  dnc  - status.degrees.get(com, 0.) * degc_totw
+                #print("Or  com:{0} status.degrees:   {1}".format(com,status.degrees))
+
                 if incr > best_increase :
                     best_increase = incr
                     best_com = com
+
             __insert(node, best_com,
                     neigh_communities.get(best_com, 0.), status)
             if best_com != com_node :

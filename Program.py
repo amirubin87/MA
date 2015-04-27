@@ -5,14 +5,15 @@ Created on Mar 24, 2015
 '''
 
 import networkx as nx
-import Louvain as community_package
+import MyLouvain as community_package
 import OriginalLouvain
 print("fileName(no extension):")
 fileName = input()
 file = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/network"+ fileName+ ".dat" , "rb")
+G=nx.read_weighted_edgelist(file)
+
 
 #New
-G=nx.read_weighted_edgelist(file)
 part = community_package.best_partition(G)
 #for keys,values in part.items():
 #    print(keys)
@@ -31,6 +32,7 @@ for keys,values in part.items():
         output.write(" ")
     output.write('\n')
 output.close()
+
 
 #Original
 part = OriginalLouvain.best_partition(G)
