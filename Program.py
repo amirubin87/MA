@@ -8,9 +8,9 @@ import networkx as nx
 import MyLouvain as community_package
 import OriginalLouvain
 print("inputFileDirName(no extension):")
-inputFileDirName = input()
+inputFileDirName = "-N 1000 -k 10 -maxk 50 -mut 0.3 -minc 10 -maxc 20 -on 100 -om 5 -muw 0.1 -t1 2 -t2 1"#input()
 print("outputFileName(no extension):")
-outputFileName = input()
+outputFileName = inputFileDirName
 file = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/"+inputFileDirName+"/network.dat" , "rb")
 G=nx.read_weighted_edgelist(file)
 
