@@ -371,7 +371,9 @@ def __one_level(graph, status) :
         nb_pass_done += 1
 
         for node in graph.nodes() :
+            # com of the node
             com_node = status.node2com[node]
+            # ( sum of edges weights of the node ) / 2 * (sum of weights of all nodes )
             degc_totw = status.gdegrees.get(node, 0.) / (status.total_weight*2.)
             neigh_communities = __neighcom(node, graph, status)
             __remove(node, com_node,
@@ -381,9 +383,7 @@ def __one_level(graph, status) :
             best_increase = 0
 
             for com, dnc in neigh_communities.items() :
-                #TODOD -status.degrees dont match!
                 incr =  dnc  - status.degrees.get(com, 0.) * degc_totw
-                #print("Or  com:{0} status.degrees:   {1}".format(com,status.degrees))
 
                 if incr > best_increase :
                     best_increase = incr
@@ -478,6 +478,7 @@ def __neighcom(node, graph, status) :
     """
     Compute the communities in the neighborood of node in the graph given
     with the decomposition node2com
+    Returns a dic: a comm and the sum of weights of edges between the given node and all nodes in it.
     """
     weights = {}
     for neighbor, datas in graph[node].items() :
