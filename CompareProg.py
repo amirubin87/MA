@@ -4,9 +4,10 @@ Created on Apr 18, 2015
 @author: t-amirub
 '''
 from CompareUtils import *
+from OmegaIndex import *
 
 import networkx as nx
-import MyLouvain as community_package
+from MyLouvain import *
 
 class color:
    PURPLE = '\033[95m'
@@ -25,21 +26,51 @@ class color:
 -------------------------------------------'''
 
 print("inputFileDirName(no extension):")
-inputFileDirName = input()
+inputFileDirName = "-N 5000 -k 5 -maxk 20 -mut 0.3 -minc 10 -maxc 50 -on 100 -om 5 -muw 0.1"#input()
 print("louvainOutputFileName(no extension):")
-louvainOutputFileName = input()
+louvainOutputFileName = inputFileDirName#"-N 5000 -k 5 -maxk 20 -mut 0.3 -minc 10 -maxc 50 -on 100 -om 5 -muw 0.1"#input()
 
 file = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/"+inputFileDirName+"/network.dat" , "rb")
 G=nx.read_weighted_edgelist(file)
 
+# Checks Omega Index per level in the dendogram
+mod_t_h = 2
+print("mod_t_h: {0}".format(mod_t_h))
+dendo = generate_dendrogram(G,None,True, mod_t_h)
+for level in range(0, len(dendo)):
+    part = partition_at_level(dendo,level)
+    print ("Level: {1}       MyLouvain.modularity {0}".format(modularity(part, G), level))
 
-#New
-part = community_package.best_partition(G,True)
+
+    output = open("MyLouvainOutput" + louvainOutputFileName + ".txt",'w')
+    for keys,values in part.items():
+        output.write(keys)
+        output.write('\t')
+        for val in values :
+            output.write(str(val))
+            output.write(" ")
+        output.write('\n')
+    output.close()
+
+
+
+    groundTruthFile = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/"+inputFileDirName+"/community.dat" , "r")
+    groundTruth = convertFileToPartition(groundTruthFile)
+
+    louvainOutputFile = open("C:/LiClipse Workspace/MA/MA/MyLouvainOutput" + louvainOutputFileName + ".txt" , "r")
+    louvainOutput = convertFileToPartition(louvainOutputFile)
+    print ("Level: {1}       Omega:   {0}".format(OmegaIndex(groundTruth,louvainOutput), level))
+    print("     ")
+
+
+'''
+#Old version - only checks the best partition
+part = best_partition(G,True)
 #for keys,values in part.items():
 #    print(keys)
 #    print(values)
 
-print("     MyLouvain.modularity {0}".format(community_package.modularity(part, G)))
+print("     MyLouvain.modularity {0}".format(modularity(part, G)))
 print("     ")
 
 
@@ -60,6 +91,10 @@ groundTruth = convertFileToPartition(groundTruthFile)
 louvainOutputFile = open("C:/LiClipse Workspace/MA/MA/MyLouvainOutput" + louvainOutputFileName + ".txt" , "r")
 louvainOutput = convertFileToPartition(louvainOutputFile)
 
+print ("Omega:   {0}".format(OmegaIndex(groundTruth,louvainOutput)))
+
+
+
 print("groundTruth:   {0}".format(groundTruth))
 # print louvainOutput BOLD when not the same
 print("louvainOutput: {", end="")
@@ -77,4 +112,4 @@ louvainOutputComms = com2Nodes(louvainOutput)
 print("groundTruthComms amount of comms:   {0}, {1}".format(len(groundTruthComms), groundTruthComms))
 print("louvainOutputComms amountof comms : {0}, {1}".format(len(louvainOutputComms), louvainOutputComms))
 
-
+'''
