@@ -14,11 +14,13 @@ This module implements community detection.
 
 __PASS_MAX = -1
 __MIN = 0.0000001
-___MODULARITYTH = 0.5
+# NOTICE- when this is 1 we have the normal algo.
+# this is the rate of improvement
+MODULARITY_T_H = 1
 import networkx as nx
 
-
-def partition_at_level(dendrogram, level) :
+def partition_at_level(dendrogram, level,mod_t_h=1) :
+    MODULARITY_T_H = mod_t_h
     """Return the partition of the nodes at the given level
 
     A dendrogram is a tree and each level is a partition of the graph nodes.
@@ -51,10 +53,10 @@ def partition_at_level(dendrogram, level) :
 
     Examples
     --------
-    >>> G=nx.erdos_renyi_graph(100, 0.01)
-    >>> dendo = generate_dendrogram(G)
-    >>> for level in range(len(dendo) - 1) :
-    >>>     print "partition at level", level, "is", partition_at_level(dendo, level)
+    > G=nx.erdos_renyi_graph(100, 0.01)
+    > dendo = generate_dendrogram(G)
+    > for level in range(len(dendo) - 1) :
+    >     print "partition at level", level, "is", partition_at_level(dendo, level)
     """
     partition = dendrogram[0].copy()
     for index in range(1, level + 1) :
@@ -64,7 +66,6 @@ def partition_at_level(dendrogram, level) :
                 #The community of the node in level i in the dendro is the name of the node to look for in level i+1 in the dendro.
                 partition[node].extend(dendrogram[index][community])
     return partition
-
 
 def modularity(partition, graph) :
     """Compute the modularity of a partition of a graph
@@ -100,9 +101,9 @@ def modularity(partition, graph) :
 
     Examples
     --------
-    >>> G=nx.erdos_renyi_graph(100, 0.01)
-    >>> part = best_partition(G)
-    >>> modularity(part, G)
+    > G=nx.erdos_renyi_graph(100, 0.01)
+    > part = best_partition(G)
+    > modularity(part, G)
     """
     if type(graph) != nx.Graph :
         raise TypeError("Bad graph type, use only non directed graph")
@@ -131,8 +132,8 @@ def modularity(partition, graph) :
         res += (inc.get(com, 0.) / links) - (deg.get(com, 0.) / (2.*links))**2
     return res
 
-
-def best_partition(graph, SplitNodesInL1 = False, partition = None) :
+def best_partition(graph, SplitNodesInL1 = False, partition = None,mod_t_h=1) :
+    MODULARITY_T_H = mod_t_h
     """Compute the partition of the graph nodes which maximises the modularity
     (or try..) using the Louvain heuristices
 
@@ -172,7 +173,8 @@ def best_partition(graph, SplitNodesInL1 = False, partition = None) :
     dendo = generate_dendrogram(graph, partition,SplitNodesInL1)
     return partition_at_level(dendo, len(dendo) - 1 )
 
-def generate_dendrogram(graph, part_init = None, SplitNodesInL1 = False) :
+def generate_dendrogram(graph, part_init = None, SplitNodesInL1 = False,mod_t_h=1) :
+    MODULARITY_T_H = mod_t_h
     """Find communities in the graph and return the associated dendrogram
 
     A dendrogram is a tree and each level is a partition of the graph nodes.  Level 0 is the first partition, which contains the smallest communities, and the best is len(dendrogram) - 1. The higher the level is, the bigger are the communities
@@ -212,13 +214,11 @@ def generate_dendrogram(graph, part_init = None, SplitNodesInL1 = False) :
 
     Examples
     --------
-    >>> G=nx.erdos_renyi_graph(100, 0.01)
-    >>> dendo = generate_dendrogram(G)
-    >>> for level in range(len(dendo) - 1) :
-    >>>     print "partition at level", level, "is", partition_at_level(dendo, level)
+    > G=nx.erdos_renyi_graph(100, 0.01)
+    > dendo = generate_dendrogram(G)
+    > for level in range(len(dendo) - 1) :
+    >     print "partition at level", level, "is", partition_at_level(dendo, level)
     """
-    print("MY graph.number_of_edges(): {0}".format(graph.number_of_edges()))
-    print("MY graph.number_of_nodes(): {0}".format(graph.number_of_nodes()))
     if type(graph) != nx.Graph :
         raise TypeError("Bad graph type, use only non directed graph")
 
@@ -237,8 +237,6 @@ def generate_dendrogram(graph, part_init = None, SplitNodesInL1 = False) :
     __one_level(current_graph, status, SplitNodesInL1)
     new_mod = __modularity(status)
     partition = __renumberComms(status.node2com)
-    print("MY L1  Louvain  partition after one level:   {0}".format(partition))
-    print("MY L1 Louvain  new_mod in while: {0}".format(new_mod))
     status_list.append(partition)
     mod = new_mod
     current_graph = induced_graph(partition, current_graph)
@@ -246,28 +244,18 @@ def generate_dendrogram(graph, part_init = None, SplitNodesInL1 = False) :
     status.init(current_graph)
     
     while True :
-        print("")
-        print("")
-        print("MY         ENTERED WHILE")
-        print("MY current_graph.number_of_edges(): {0}".format(current_graph.number_of_edges()))
-        print("MY current_graph.number_of_nodes(): {0}".format(current_graph.number_of_nodes()))
-        print("")
+        print("         In while        ")
         __one_level(current_graph, status)
         new_mod = __modularity(status)
-        print("MY Louvain  new_mod in while: {0}".format(new_mod))
-        partition = __renumberComms(status.node2com)
-        print("MY  Louvain  partition after one level:   {0}".format(partition))
-        print("MY Louvain  new_mod in while: {0}".format(new_mod))
-        #TODO - move this is to before the "renumberComms"
-        print("MY   newMod: {0} mod: {1}".format(new_mod,mod))
         if new_mod - mod < __MIN :
             break
+        partition = __renumberComms(status.node2com)
+
         status_list.append(partition)
         mod = new_mod
         current_graph = induced_graph(partition, current_graph)
         status.init(current_graph)
     return status_list[:]
-
 
 def induced_graph(partition, graph) :
     
@@ -332,7 +320,6 @@ def induced_graph(partition, graph) :
 
     return ret
 
-
 def __renumberComms(dictionary) :
     """Renumber the comms in the values of the dictionary from 0 to n
     """
@@ -354,7 +341,8 @@ def __renumberComms(dictionary) :
     return ret
 
 #! IsInL1 - when true nodes will be splitted!
-def __one_level(graph, status, IsInL1 = False) :
+def __one_level(graph, status, IsInL1 = False,mod_t_h=1) :
+    MODULARITY_T_H = mod_t_h
     
     """Compute one level of communities
     ! If nodes can be in more than one comm -
@@ -364,8 +352,6 @@ def __one_level(graph, status, IsInL1 = False) :
     modif = True
     nb_pass_done = 0
     cur_mod = __modularity(status)
-    print("MY     cur_mod when enter oneLevel: {0}".format(cur_mod))
-    print("MY     status.total_weight when enter oneLevel: {0}".format(status.total_weight))
     new_mod = cur_mod
 
     while modif  and nb_pass_done != __PASS_MAX :
@@ -374,23 +360,43 @@ def __one_level(graph, status, IsInL1 = False) :
         nb_pass_done += 1
 
         for node in graph.nodes() :
+            # comms of the node
             coms_node = status.node2com[node]
-            degc_totw = status.gdegrees.get(node, 0.) / (status.total_weight*2.)
+
+             # ( sum of edges weights of the node ) / 2 * (sum of weights of all nodes )
+            degc_totw = status.TotalWeightsOfEdgesInNode.get(node, 0.) / (status.total_weight*2.)
+
+            # A dic: a comm and the sum of weights of edges between the given node and all nodes in it.
             neigh_communities = __neighcom(node, graph, status)
             best_coms = coms_node.copy()
             comsNMods = []
+
             # remove node from all coms he is in
             while coms_node :
                 com_node = coms_node.pop()
                 __remove(node, com_node,
                     neigh_communities.get(com_node, 0.), status)
+
             best_increase = 0
 
-            for com, dnc in neigh_communities.items() :
-                incr =  dnc  - status.degrees.get(com, 0.) * degc_totw
-
+            # Go over all comms node has neighbours in
+            for com, weightsConnectingNodeToComm in neigh_communities.items() :
+                # kind reminder : 
+                # degc_totw = ( sum of edges weights of the node ) / 2 * (sum of weights of all nodes )
+                # incr example:
+                # say a node v has sum of weights of edges in him 10.
+                # look at a neighbour comm c1, and say they are connected with total weight of 4.
+                # say that total weight of edges touching c1 is 20.
+                # and say that all in all in our graph we have su, of weights 100.
+                # so we have:
+                #   4 - 20*[10/(2*100)]
+                # notice that the expression [10/(2*100)] is the same for all neighbour comm!
+                # so we will get the highest impact where:
+                # a.  the total weight of edges connecting the node to the comm is big.
+                # b. the total weight of edges touching the comm is small.
+                incr =  weightsConnectingNodeToComm  - status.TotalWeightsOfEdgesInNodesInComm.get(com, 0.) * degc_totw
                 ##########################################################
-                if IsInL1 and incr + ___MODULARITYTH >= best_increase:
+                if IsInL1 and incr*MODULARITY_T_H >= best_increase:
                     #Add com
                     comsNMods.append([com, incr])
                     #sort - TODO, work with sortedArray
@@ -398,20 +404,15 @@ def __one_level(graph, status, IsInL1 = False) :
                     #if we have a new best increase - we need to move comms that are no longer relevant
                     if (incr > best_increase):
                         best_increase = incr
-                        tmpBestComs = [comNMod[0] for comNMod in comsNMods if comNMod[1]+ ___MODULARITYTH >= best_increase]
+                        #filter by best - do we want max amount?
+                        tmpBestComs = [comNMod[0] for comNMod in comsNMods if comNMod[1]*MODULARITY_T_H >= best_increase]
                         best_coms = tmpBestComs.copy()
                 #not in L1
                 else :
                     if incr > best_increase :
                             best_increase = incr
-                            #for now, one com only(TODO!)
                             best_coms = [com]
                 ############################################################
-
-                if incr > best_increase :
-                    best_increase = incr
-                    #for now, one com only(TODO!)
-                    best_coms = [com]
 
             for best_com in best_coms :
                 __insert(node, best_com,
@@ -423,30 +424,34 @@ def __one_level(graph, status, IsInL1 = False) :
         if new_mod - cur_mod < __MIN :
             break
 
-
 class Status :
     """
     To handle several data in one struct.
 
     Could be replaced by named tuple, but don't want to depend on python 2.6
     """
+
+    # Dic: node to comms
     node2com = {}
+    #sum of weights of all edges
     total_weight = 0
     internals = {}
-    degrees = {}
-    gdegrees = {}
+    # Dic: comm to sum of weights of edges to and from/ from (depends if directed or not!) all nodes in domm
+    TotalWeightsOfEdgesInNodesInComm = {}
+    # Dic: node to sum of weights of edges to and from/ from (depends if directed or not!)
+    TotalWeightsOfEdgesInNode = {}
 
     def __init__(self) :
         self.node2com = dict([])
         self.total_weight = 0
-        self.degrees = dict([])
-        self.gdegrees = dict([])
+        self.TotalWeightsOfEdgesInNodesInComm = dict([])
+        self.TotalWeightsOfEdgesInNode = dict([])
         self.internals = dict([])
         self.loops = dict([])
 
     def __str__(self) :
-        return ("node2com : " + str(self.node2com) + " degrees : "
-            + str(self.degrees) + " internals : " + str(self.internals)
+        return ("node2com : " + str(self.node2com) + " TotalWeightsOfEdgesInNodesInComm : "
+            + str(self.TotalWeightsOfEdgesInNodesInComm) + " internals : " + str(self.internals)
             + " total_weight : " + str(self.total_weight))
 
     def copy(self) :
@@ -454,8 +459,8 @@ class Status :
         new_status = Status()
         new_status.node2com = self.node2com.copy()
         new_status.internals = self.internals.copy()
-        new_status.degrees = self.degrees.copy()
-        new_status.gdegrees = self.gdegrees.copy()
+        new_status.TotalWeightsOfEdgesInNodesInComm = self.TotalWeightsOfEdgesInNodesInComm.copy()
+        new_status.TotalWeightsOfEdgesInNode = self.TotalWeightsOfEdgesInNode.copy()
         new_status.total_weight = self.total_weight
 
     def init(self, graph, part = None) :
@@ -463,8 +468,8 @@ class Status :
         count = 0
         self.node2com = dict([])
         self.total_weight = 0
-        self.degrees = dict([])
-        self.gdegrees = dict([])
+        self.TotalWeightsOfEdgesInNodesInComm = dict([])
+        self.TotalWeightsOfEdgesInNode = dict([])
         self.internals = dict([])
         self.total_weight = graph.size(weight = 'weight')
         if part == None :
@@ -473,8 +478,8 @@ class Status :
                 deg = float(graph.degree(node, weight = 'weight'))
                 if deg < 0 :
                     raise ValueError("Bad graph type, use positive weights")
-                self.degrees[count] = deg
-                self.gdegrees[node] = deg
+                self.TotalWeightsOfEdgesInNodesInComm[count] = deg
+                self.TotalWeightsOfEdgesInNode[node] = deg
                 self.loops[node] = float(graph.get_edge_data(node, node,
                                                  {"weight":0}).get("weight", 1))
                 self.internals[count] = self.loops[node]
@@ -484,8 +489,8 @@ class Status :
                 com = part[node]
                 self.node2com[node] = com
                 deg = float(graph.degree(node, weight = 'weight'))
-                self.degrees[com] = self.degrees.get(com, 0) + deg
-                self.gdegrees[node] = deg
+                self.TotalWeightsOfEdgesInNodesInComm[com] = self.TotalWeightsOfEdgesInNodesInComm.get(com, 0) + deg
+                self.TotalWeightsOfEdgesInNode[node] = deg
                 inc = 0.
                 for neighbor, datas in graph[node].items() :
                     weight = datas.get("weight", 1)
@@ -498,12 +503,9 @@ class Status :
                             inc += float(weight) / 2.
                 self.internals[com] = self.internals.get(com, 0) + inc
 
-
-
 def __neighcom(node, graph, status) :
     """
-    Compute the communities in the neighborood of node in the graph given
-    with the decomposition node2com
+    Returns a dic: a comm and the sum of weights of edges between the given node and all nodes in it.
     
     ! If nodes can be in more than one comm - 
         for each neighbor we will check in each comm he is in, and will update its weight.
@@ -514,35 +516,34 @@ def __neighcom(node, graph, status) :
                 and we now work on u - 
                 when we look at his neighborhood comms, both c1 and c2
                 are calculated when v is treated.
-                The fact the u is in both DOESNT EFFECT ANYTHING.
+                The fact that u is in both DOESNT EFFECT ANYTHING.
                  
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
     """
     weights = {}
-    for neighbor, datas in graph[node].items() :
-        if neighbor != node :
-            weight = datas.get("weight", 1)
+    for neighbor, edgeData in graph[node].items():
+        if neighbor != node:
+            weight = edgeData.get("weight", 1)
             neighborcoms = status.node2com[neighbor]            
             for neighborcom in neighborcoms :
                 weights[neighborcom] = weights.get(neighborcom, 0) + weight
             
     return weights
 
-
 def __remove(node, com, weight, status, IsInL1 = False) :
-    """ For a node WHICH WAS REMVOD from a community com, we modify status"""
-    status.degrees[com] = ( status.degrees.get(com, 0.)
-                                    - status.gdegrees.get(node, 0.) )
-    status.internals[com] = float( status.internals.get(com, 0.) -
-                weight - status.loops.get(node, 0.) )
-    #This is not needed - already poped the com from the list!
-    #status.node2com[node].remove(com)
+    """ For a node WHICH WAS REMOVD from a community com, we modify status"""
+    status.TotalWeightsOfEdgesInNodesInComm[com] = (status.TotalWeightsOfEdgesInNodesInComm.get(com, 0.)
+                                    -status.TotalWeightsOfEdgesInNode.get(node, 0.))
+    status.internals[com] = float(status.internals.get(com, 0.) -
+                weight - status.loops.get(node, 0.))
+    # This is not needed - already poped the com from the list!
+    # status.node2com[node].remove(com)
 
 def __insert(node, com, weight, status, IsInL1 = False) :
     """ Insert node into community and modify status"""
     status.node2com[node].add(com)
-    status.degrees[com] = (status.degrees.get(com, 0.) +
-                                status.gdegrees.get(node, 0.))
+    status.TotalWeightsOfEdgesInNodesInComm[com] = (status.TotalWeightsOfEdgesInNodesInComm.get(com, 0.) +
+                                status.TotalWeightsOfEdgesInNode.get(node, 0.))
 
     status.internals[com] = float(status.internals.get(com, 0.) +
                             weight +
@@ -568,7 +569,7 @@ def __modularity(status) :
     commsSet = __getCommsFromPartition(status.node2com)
     for community in commsSet :        
         in_degree = status.internals.get(community, 0.)
-        degree = status.degrees.get(community, 0.)
+        degree = status.TotalWeightsOfEdgesInNodesInComm.get(community, 0.)
         if links > 0 :
             result = result + in_degree / links - ((degree / (2.*links))**2)
     return result
