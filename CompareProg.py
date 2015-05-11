@@ -25,22 +25,25 @@ class color:
                     MAIN
 -------------------------------------------'''
 
-print("inputFileDirName(no extension):")
-inputFileDirName = "-N 5000 -k 5 -maxk 20 -mut 0.3 -minc 10 -maxc 50 -on 100 -om 5 -muw 0.1"#input()
-print("louvainOutputFileName(no extension):")
+dir = "C:/cygwin64/home/t-amirub/weighted_networks/"
+inputFileDirName = ""#"-N 5000 -k 10 -maxk 50 -mut 0.3 -minc 10 -maxc 20 -on 500 -om 5 -muw 0.1 -t1 2 -t2 1"#input()
 louvainOutputFileName = inputFileDirName#"-N 5000 -k 5 -maxk 20 -mut 0.3 -minc 10 -maxc 50 -on 100 -om 5 -muw 0.1"#input()
 
-file = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/"+inputFileDirName+"/network.dat" , "rb")
+file = open(dir+inputFileDirName+"network.dat", "rb")
 G=nx.read_weighted_edgelist(file)
 
 # Checks Omega Index per level in the dendogram
-mod_t_h = 2
+mod_t_h = 1.3
 print("mod_t_h: {0}".format(mod_t_h))
-dendo = generate_dendrogram(G,None,True, mod_t_h)
+
+dendo = generate_dendrogram(G, mod_t_h, None,True)
+
+groundTruthFile = open(dir+inputFileDirName+"/community.dat" , "r")
+groundTruth = convertFileToPartition(groundTruthFile)
+
 for level in range(0, len(dendo)):
     part = partition_at_level(dendo,level)
     print ("Level: {1}       MyLouvain.modularity {0}".format(modularity(part, G), level))
-
 
     output = open("MyLouvainOutput" + louvainOutputFileName + ".txt",'w')
     for keys,values in part.items():
@@ -51,11 +54,6 @@ for level in range(0, len(dendo)):
             output.write(" ")
         output.write('\n')
     output.close()
-
-
-
-    groundTruthFile = open("C:/cygwin64/home/t-amirub/weighted_directed_nets/"+inputFileDirName+"/community.dat" , "r")
-    groundTruth = convertFileToPartition(groundTruthFile)
 
     louvainOutputFile = open("C:/LiClipse Workspace/MA/MA/MyLouvainOutput" + louvainOutputFileName + ".txt" , "r")
     louvainOutput = convertFileToPartition(louvainOutputFile)
