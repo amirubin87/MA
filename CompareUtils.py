@@ -51,9 +51,9 @@ def convertFileToPartition(file):
         comms = line.split('\t')[1].split(' ')
         comms.pop()
         ans[node] = comms
-    return __renumberComms(ans)
+    return renumberComms(ans)
 
-def __renumberComms(dictionary) :
+def renumberComms(dictionary) :
     """Renumber the values of the dictionary from 0 to n
     """
     count = 0
