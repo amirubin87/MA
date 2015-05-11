@@ -14,13 +14,9 @@ This module implements community detection.
 
 __PASS_MAX = -1
 __MIN = 0.0000001
-# NOTICE- when this is 1 we have the normal algo.
-# this is the rate of improvement
-MODULARITY_T_H = 1
 import networkx as nx
 
-def partition_at_level(dendrogram, level,mod_t_h=1) :
-    MODULARITY_T_H = mod_t_h
+def partition_at_level(dendrogram, level) :
     """Return the partition of the nodes at the given level
 
     A dendrogram is a tree and each level is a partition of the graph nodes.
@@ -58,6 +54,7 @@ def partition_at_level(dendrogram, level,mod_t_h=1) :
     > for level in range(len(dendo) - 1) :
     >     print "partition at level", level, "is", partition_at_level(dendo, level)
     """
+    print("             IN  partition_at_level  ")
     partition = dendrogram[0].copy()
     for index in range(1, level + 1) :
         for node, communities in partition.items():
@@ -132,8 +129,7 @@ def modularity(partition, graph) :
         res += (inc.get(com, 0.) / links) - (deg.get(com, 0.) / (2.*links))**2
     return res
 
-def best_partition(graph, SplitNodesInL1 = False, partition = None,mod_t_h=1) :
-    MODULARITY_T_H = mod_t_h
+def best_partition(graph, mod_t_h, SplitNodesInL1 = False, partition = None, ) :
     """Compute the partition of the graph nodes which maximises the modularity
     (or try..) using the Louvain heuristices
 
@@ -170,11 +166,10 @@ def best_partition(graph, SplitNodesInL1 = False, partition = None,mod_t_h=1) :
     .. 1. Blondel, V.D. et al. Fast unfolding of communities in large networks. J. Stat. Mech 10008, 1-12(2008).
     .. 2. TBD
     """
-    dendo = generate_dendrogram(graph, partition,SplitNodesInL1)
-    return partition_at_level(dendo, len(dendo) - 1 )
+    dendo = generate_dendrogram(graph, mod_t_h, partition, SplitNodesInL1)
+    return partition_at_level(dendo, len(dendo) - 1)
 
-def generate_dendrogram(graph, part_init = None, SplitNodesInL1 = False,mod_t_h=1) :
-    MODULARITY_T_H = mod_t_h
+def generate_dendrogram(graph, mod_t_h, part_init = None, SplitNodesInL1 = False,) :
     """Find communities in the graph and return the associated dendrogram
 
     A dendrogram is a tree and each level is a partition of the graph nodes.  Level 0 is the first partition, which contains the smallest communities, and the best is len(dendrogram) - 1. The higher the level is, the bigger are the communities
@@ -224,9 +219,9 @@ def generate_dendrogram(graph, part_init = None, SplitNodesInL1 = False,mod_t_h=
 
     #special case, when there is no link
     #the best partition is everyone in its community
-    if graph.number_of_edges() == 0 :
+    if graph.number_of_edges() == 0:
         part = dict([])
-        for node in graph.nodes() :
+        for node in graph.nodes():
             part[node] = [node]
         return part
 
@@ -234,7 +229,7 @@ def generate_dendrogram(graph, part_init = None, SplitNodesInL1 = False,mod_t_h=
     status = Status()
     status.init(current_graph, part_init)  
     status_list = list()
-    __one_level(current_graph, status, SplitNodesInL1)
+    __one_level(current_graph, mod_t_h, status, SplitNodesInL1)
     new_mod = __modularity(status)
     partition = __renumberComms(status.node2com)
     status_list.append(partition)
@@ -244,8 +239,7 @@ def generate_dendrogram(graph, part_init = None, SplitNodesInL1 = False,mod_t_h=
     status.init(current_graph)
     
     while True :
-        print("         In while        ")
-        __one_level(current_graph, status)
+        __one_level(current_graph, mod_t_h, status)
         new_mod = __modularity(status)
         if new_mod - mod < __MIN :
             break
@@ -288,19 +282,6 @@ def induced_graph(partition, graph) :
     -------
     g : networkx.Graph
        a networkx graph where nodes are the parts
-
-    Examples
-    --------
-    >>> n = 5
-    >>> g = nx.complete_graph(2*n)
-    >>> part = dict([])
-    >>> for node in g.nodes() :
-    >>>     part[node] = node % 2
-    >>> ind = induced_graph(part, g)
-    >>> goal = nx.Graph()
-    >>> goal.add_weighted_edges_from([(0,1,n*n),(0,0,n*(n-1)/2), (1, 1, n*(n-1)/2)])
-    >>> nx.is_isomorphic(int, goal)
-    True
     """
     ret = nx.Graph()
     
@@ -341,9 +322,8 @@ def __renumberComms(dictionary) :
     return ret
 
 #! IsInL1 - when true nodes will be splitted!
-def __one_level(graph, status, IsInL1 = False,mod_t_h=1) :
-    MODULARITY_T_H = mod_t_h
-    
+def __one_level(graph, mod_t_h, status, IsInL1 = False) :
+
     """Compute one level of communities
     ! If nodes can be in more than one comm -
         FIRST IMPLEMETATION NOT SUPPORTING MULTIPLE COMMS PER NODE.
@@ -394,9 +374,37 @@ def __one_level(graph, status, IsInL1 = False,mod_t_h=1) :
                 # so we will get the highest impact where:
                 # a.  the total weight of edges connecting the node to the comm is big.
                 # b. the total weight of edges touching the comm is small.
-                incr =  weightsConnectingNodeToComm  - status.TotalWeightsOfEdgesInNodesInComm.get(com, 0.) * degc_totw
+                incr = weightsConnectingNodeToComm  - status.TotalWeightsOfEdgesInNodesInComm.get(com, 0.) * degc_totw
+                # Why is this the increased value of adding the node v to  com?
+                # Modularity  is: for all comm c sum: (edges inside c/(all edges) - (edges touching c/(all edges))^2)
+                # first, if we only care about the change, we multiple by(all edges).
+                # When we add node v to the com we will ad all the edges between v and com to the edges inside the com.
+                # That explains the first part (weightsConnectingNodeToComm).
+                # The second part we need to understand: status.TotalWeightsOfEdgesInNodesInComm.get(com, 0.) * degc_totw
+                # which is: Total Weights Of Edges In Nodes In Comm * ( sum of edges weights of the node ) / 2 * (sum of weights of all nodes )
+                # Lets look at the second element in modularity: (edges touching c/(all edges))^2)
+                # which is (edges touching c)^2/(all edges)^2 = (edges touching c)^2/(2 * (sum of weights of all nodes ))^2
+                # we already dealt with the denominator, by multiplying with (all edges) so we are left with (2 * (sum of weights of all nodes ))
+                # Now lets look at the nominator: (edges touching c)^2.
+                # Lets consider the change made in this size when adding v to comm.
+                # edges touching comm BEFORE ADDING V can be splitted to two groups:
+                # a. in comm, not touching v
+                # b. between v and comm
+                # after we add v to comm, we add
+                # c. edges touching v, not connected to comm.
+                # Lets consider the two cases of adding v to comm1 vs comm2.
+                #Notations: a1- sum of weights of edges touching comm1 before adding v
+                #Notations: a1'- sum of weights of edges touching comm1 after adding v
+                #Notations: |v|- sum of weights of edges touching v
+                #adding v to comm1 will make a1' = a1+|v|. so (a1')^2 = a1^2+2a1|v|+|v|^2
+                #adding v to comm2 will make a2' = a2+|v|. so (a2')^2 = a2^2+2a2|v|+|v|^2
+                #we only care about the difference between the original a1^2- a1'^2 and a2^2- a2'^2
+                # so we get 2a1|v|+|v|^2 vs 2a2|v|+|v|^2, we can remove the |v|^2, he is the same in both,
+                # so the affect of adding v to comm i upon the size ai is  2a2|v| which is ALMOST what we have:
+                #   Total Weights Of Edges In Nodes In Comm * ( sum of edges weights of the node )
+                # TODO- understand the missing 2..
                 ##########################################################
-                if IsInL1 and incr*MODULARITY_T_H >= best_increase:
+                if IsInL1 and incr*mod_t_h >= best_increase:
                     #Add com
                     comsNMods.append([com, incr])
                     #sort - TODO, work with sortedArray
@@ -405,7 +413,7 @@ def __one_level(graph, status, IsInL1 = False,mod_t_h=1) :
                     if (incr > best_increase):
                         best_increase = incr
                         #filter by best - do we want max amount?
-                        tmpBestComs = [comNMod[0] for comNMod in comsNMods if comNMod[1]*MODULARITY_T_H >= best_increase]
+                        tmpBestComs = [comNMod[0] for comNMod in comsNMods if comNMod[1]*mod_t_h >= best_increase]
                         best_coms = tmpBestComs.copy()
                 #not in L1
                 else :
@@ -530,7 +538,7 @@ def __neighcom(node, graph, status) :
             
     return weights
 
-def __remove(node, com, weight, status, IsInL1 = False) :
+def __remove(node, com, weight, status) :
     """ For a node WHICH WAS REMOVD from a community com, we modify status"""
     status.TotalWeightsOfEdgesInNodesInComm[com] = (status.TotalWeightsOfEdgesInNodesInComm.get(com, 0.)
                                     -status.TotalWeightsOfEdgesInNode.get(node, 0.))
@@ -565,7 +573,7 @@ def __modularity(status) :
     """
     links = float(status.total_weight)
     result = 0.
-    #get sets of comms from the dict
+    #get set of comms from the dict
     commsSet = __getCommsFromPartition(status.node2com)
     for community in commsSet :        
         in_degree = status.internals.get(community, 0.)
