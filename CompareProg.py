@@ -3,9 +3,9 @@ Created on Apr 18, 2015
 
 @author: t-amirub
 '''
+from __future__ import division
 from CompareUtils import *
 from OmegaIndex import *
-
 import networkx as nx
 from MyLouvain import *
 
@@ -28,37 +28,24 @@ class color:
 dir = "C:/cygwin64/home/t-amirub/weighted_networks/"
 inputFileDirName = ""#"-N 5000 -k 10 -maxk 50 -mut 0.3 -minc 10 -maxc 20 -on 500 -om 5 -muw 0.1 -t1 2 -t2 1"#input()
 louvainOutputFileName = inputFileDirName#"-N 5000 -k 5 -maxk 20 -mut 0.3 -minc 10 -maxc 50 -on 100 -om 5 -muw 0.1"#input()
-
+print("Om = 2")
 file = open(dir+inputFileDirName+"network.dat", "rb")
 G=nx.read_weighted_edgelist(file)
-
-# Checks Omega Index per level in the dendogram
-mod_t_h = 1.3
-print("mod_t_h: {0}".format(mod_t_h))
-
-dendo = generate_dendrogram(G, mod_t_h, None,True)
-
+file.close()
 groundTruthFile = open(dir+inputFileDirName+"/community.dat" , "r")
 groundTruth = convertFileToPartition(groundTruthFile)
+groundTruthFile.close()
+for mod_t_h in (1.3,1.4,1.5):
+    avg = 0.0
+    for i in (1,2):
+        dendo = generate_dendrogram(G, mod_t_h, None,True)
+        for level in range(0,len(dendo)):
+            part = partition_at_level(dendo,level)
+            #convert all string to int
+            louvainOutput  = {int(k):v for k,v in part.items()}
+            print ("mod_t_h: {1} level:{2} OmegaIndex:   {0}".format(OmegaIndex(groundTruth,louvainOutput), mod_t_h, level))
+    print ("")
 
-for level in range(0, len(dendo)):
-    part = partition_at_level(dendo,level)
-    print ("Level: {1}       MyLouvain.modularity {0}".format(modularity(part, G), level))
-
-    output = open("MyLouvainOutput" + louvainOutputFileName + ".txt",'w')
-    for keys,values in part.items():
-        output.write(keys)
-        output.write('\t')
-        for val in values :
-            output.write(str(val))
-            output.write(" ")
-        output.write('\n')
-    output.close()
-
-    louvainOutputFile = open("C:/LiClipse Workspace/MA/MA/MyLouvainOutput" + louvainOutputFileName + ".txt" , "r")
-    louvainOutput = convertFileToPartition(louvainOutputFile)
-    print ("Level: {1}       Omega:   {0}".format(OmegaIndex(groundTruth,louvainOutput), level))
-    print("     ")
 
 
 '''
