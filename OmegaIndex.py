@@ -48,7 +48,7 @@ def ExpectedOmegaIndex(M, amountsOfNodesWithSameAmountOfComms):
     '''
     sum = 0
     for val in amountsOfNodesWithSameAmountOfComms.values():
-       sum = sum + val[0]*val[2]
+       sum = sum + val[0]*val[1]
     return sum/(pow(M,2.0))
 
 def AmountOfSharedCommsToAmountOfPairsOfNodes(Node2Comm1, Node2Comm2):
