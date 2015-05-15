@@ -54,7 +54,6 @@ def partition_at_level(dendrogram, level) :
     > for level in range(len(dendo) - 1) :
     >     print "partition at level", level, "is", partition_at_level(dendo, level)
     """
-    print("             IN  partition_at_level  ")
     partition = dendrogram[0].copy()
     for index in range(1, level + 1) :
         for node, communities in partition.items():

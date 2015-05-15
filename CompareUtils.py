@@ -72,6 +72,25 @@ def renumberComms(dictionary) :
 
     return ret
 
+def writeOutputToFile(part, louvainOutputFileName):
+    output = open("MyLouvainOutput" + louvainOutputFileName + ".txt",'w')
+    for keys,values in part.items():
+        output.write(keys)
+        output.write('\t')
+        for val in values :
+            output.write(str(val))
+            output.write(" ")
+        output.write('\n')
+    output.close()
+
+
+def convertPartitionToIntDictionary(part):
+    ans = dict()
+    for sub in part:
+        for key in sub:
+            ans[int(key)] = sub[key]
+    return ans
+
 def com2Nodes(partition):
     '''
     Converts node 2 comms to com 2 nodes.
