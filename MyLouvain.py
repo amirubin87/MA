@@ -128,7 +128,7 @@ def modularity(partition, graph) :
         res += (inc.get(com, 0.) / links) - (deg.get(com, 0.) / (2.*links))**2
     return res
 
-def best_partition(graph, mod_t_h, SplitNodesInL1 = False, partition = None, ) :
+def best_partition(graph, mod_t_h, SplitNodesInL1 = False, partition = None, SplitNodesInAllLevels = False) :
     """Compute the partition of the graph nodes which maximises the modularity
     (or try..) using the Louvain heuristices
 
@@ -165,10 +165,10 @@ def best_partition(graph, mod_t_h, SplitNodesInL1 = False, partition = None, ) :
     .. 1. Blondel, V.D. et al. Fast unfolding of communities in large networks. J. Stat. Mech 10008, 1-12(2008).
     .. 2. TBD
     """
-    dendo = generate_dendrogram(graph, mod_t_h, partition, SplitNodesInL1)
+    dendo = generate_dendrogram(graph, mod_t_h, partition, SplitNodesInL1, SplitNodesInAllLevels)
     return partition_at_level(dendo, len(dendo) - 1)
 
-def generate_dendrogram(graph, mod_t_h, part_init = None, SplitNodesInL1 = False,) :
+def generate_dendrogram(graph, mod_t_h, part_init = None, SplitNodesInL1 = False, SplitNodesInAllLevels = False) :
     """Find communities in the graph and return the associated dendrogram
 
     A dendrogram is a tree and each level is a partition of the graph nodes.  Level 0 is the first partition, which contains the smallest communities, and the best is len(dendrogram) - 1. The higher the level is, the bigger are the communities
@@ -238,7 +238,7 @@ def generate_dendrogram(graph, mod_t_h, part_init = None, SplitNodesInL1 = False
     status.init(current_graph)
     
     while True :
-        __one_level(current_graph, mod_t_h, status)
+        __one_level(current_graph, mod_t_h, status, SplitNodesInAllLevels)
         new_mod = __modularity(status)
         if new_mod - mod < __MIN :
             break
