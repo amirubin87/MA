@@ -91,6 +91,23 @@ def convertPartitionToIntDictionary(part):
             ans[int(key)] = sub[key]
     return ans
 
+def readSLPAFile(path, t_h):
+    f= open(path + str(t_h) +"_v3_T100.icpm"  , "r")#
+    output = dict()
+    lines = f.readlines()
+
+    comm = 0
+
+    for line in lines:
+        nodes =map(int, line.split())
+        for node in nodes:
+            if output.get(node) == None:
+                output[node] = set()
+            output[node].add(comm)
+        comm = comm+1
+    f.close()
+    return output
+
 def com2Nodes(partition):
     '''
     Converts node 2 comms to com 2 nodes.
