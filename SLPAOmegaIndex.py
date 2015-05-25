@@ -6,6 +6,7 @@ from OmegaIndex import *
 from py4j.java_gateway import JavaGateway
 from py4j.java_gateway import GatewayClient
 
+#- NOTICE you must run it using java outside before..
 gateway = JavaGateway(GatewayClient(port=25335))
 gateway.entry_point.runSLPA()
 '''
