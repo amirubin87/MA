@@ -83,6 +83,22 @@ def writeOutputToFile(part, louvainOutputFileName):
         output.write('\n')
     output.close()
 
+def ConvertPartitionToSetsOfNodes(partition):
+    ans = dict()
+    for v in partition.keys():
+        for comm in partition[v]:
+             if ans.get(comm) == None:
+                ans[comm] = set()
+             ans[comm].add(v)
+    return ans.values()
+
+def OutputSetOfNodes(setsOfNodes, path):
+    file = open(path,'w')
+    for comm in setsOfNodes:
+        for node in comm:
+            file.write("%s " % node)
+        file.write("\n")
+    file.close()
 
 def convertPartitionToIntDictionary(part):
     ans = dict()
