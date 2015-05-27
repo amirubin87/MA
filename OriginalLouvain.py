@@ -249,13 +249,8 @@ def generate_dendrogram(graph, part_init = None) :
 
     status.init(current_graph)
     while True :
-        print("")
-        print("")
-        print("Original         ENTERED WHILE")
         __one_level(current_graph, status)
-        print("Original  Louvain  status.node2com after one level:   {0}".format(status.node2com))
         new_mod = __modularity(status)
-        print("Original Louvain  new_mod in while: {0}".format(new_mod))
         if new_mod - mod < __MIN :
             break
         partition = __renumber(status.node2com)
@@ -361,8 +356,6 @@ def __one_level(graph, status) :
     modif = True
     nb_pass_done = 0
     cur_mod = __modularity(status)
-    print("original     cur_mod when enter oneLevel: {0}".format(cur_mod))
-    print("original     status.total_weight when enter oneLevel: {0}".format(status.total_weight))
     new_mod = cur_mod
 
     while modif  and nb_pass_done != __PASS_MAX :
@@ -384,7 +377,6 @@ def __one_level(graph, status) :
 
             for com, dnc in neigh_communities.items() :
                 incr =  dnc  - status.degrees.get(com, 0.) * degc_totw
-
                 if incr > best_increase :
                     best_increase = incr
                     best_com = com
