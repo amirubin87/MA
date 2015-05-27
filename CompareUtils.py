@@ -49,9 +49,24 @@ def convertFileToPartition(file):
     for line in content:
         node = int(line.split('\t')[0])
         comms = line.split('\t')[1].split(' ')
+        # last elementis '\n'- we remove it.
         comms.pop()
         ans[node] = comms
     return renumberComms(ans)
+
+def convertFileForNMI(file):
+    ans= dict()
+    content = file.readlines()
+    for line in content:
+        node = int(line.split('\t')[0])
+        comms = line.split('\t')[1].split(' ')
+        # last elementis '\n'- we remove it.
+        comms.pop()
+        for comm in comms :
+            if ans.get(comm) == None:
+                ans[comm] = set()
+            ans[comm].add(node)
+    return ans.values()
 
 def renumberComms(dictionary) :
     """Renumber the values of the dictionary from 0 to n
