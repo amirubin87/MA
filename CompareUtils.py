@@ -3,6 +3,30 @@ Created on Apr 19, 2015
 
 @author: t-amirub
 '''
+def convertStanfordCommFileToPartition(stanfordCommFile):
+    '''
+    Takes a file with a list of list of nodes- each line is a comm.
+     Translate to a dict of node 2 comm.
+    Parameters
+    ----------
+    file : File
+       A file containing the data
+
+    Returns
+    -------
+    A dict of node 2 comm.
+    '''
+    ans= dict()
+    content = stanfordCommFile.readlines()
+    i = 0
+    for line in content:
+        nodes = line.replace('\n', '').split('\t')
+        for node in nodes:
+            if ans.get(node) == None:
+                ans[node] = set()
+            ans[node].add(i)
+        i = i + 1
+    return ans
 
 def sortBySmallestNode(com2Nodes):
     '''
