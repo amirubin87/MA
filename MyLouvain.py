@@ -321,6 +321,7 @@ def __renumberComms(dictionary) :
     return ret
 
 #! IsInL1 - when true nodes will be splitted!
+#TODO- make sure goes on each node at least one time
 def __one_level(graph, mod_t_h, status, IsInL1 = False) :
 
     """Compute one level of communities
@@ -374,6 +375,10 @@ def __one_level(graph, mod_t_h, status, IsInL1 = False) :
                 # a.  the total weight of edges connecting the node to the comm is big.
                 # b. the total weight of edges touching the comm is small.
                 incr = weightsConnectingNodeToComm  - status.TotalWeightsOfEdgesInNodesInComm.get(com, 0.) * degc_totw
+                #
+                # Simply look at the Louvain article. Opening the delta Q equetion gives us the above.
+                #
+                # (
                 # Why is this the increased value of adding the node v to  com?
                 # Modularity  is: for all comm c sum: (edges inside c/(all edges) - (edges touching c/(all edges))^2)
                 # first, if we only care about the change, we multiple by(all edges).
@@ -401,7 +406,7 @@ def __one_level(graph, mod_t_h, status, IsInL1 = False) :
                 # so we get 2a1|v|+|v|^2 vs 2a2|v|+|v|^2, we can remove the |v|^2, he is the same in both,
                 # so the affect of adding v to comm i upon the size ai is  2a2|v| which is ALMOST what we have:
                 #   Total Weights Of Edges In Nodes In Comm * ( sum of edges weights of the node )
-                # TODO- understand the missing 2..
+                # )
                 ##########################################################
                 if IsInL1 and incr*mod_t_h >= best_increase:
                     #Add com

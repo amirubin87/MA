@@ -76,7 +76,7 @@ def convertFileToPartition(file):
         # last elementis '\n'- we remove it.
         comms.pop()
         ans[node] = comms
-    return renumberComms(ans)
+    return ans #renumberComms(ans)
 
 def convertFileForNMI(file):
     ans= dict()
@@ -146,6 +146,8 @@ def convertPartitionToIntDictionary(part):
             ans[int(key)] = sub[key]
     return ans
 
+
+
 def readSLPAFile(path, t_h):
     f= open(path + str(t_h) +"_v3_T100.icpm"  , "r")#
     output = dict()
@@ -184,3 +186,17 @@ def com2Nodes(partition):
             ans[comm]
     return sortBySmallestNode(ans)
 
+def WriteOSLOMForNMI(oslomFile, path):
+    file = open(path,'w')
+    content = oslomFile.readlines()
+    print(content)
+    i = 1
+    for line in content:
+        if i%2 == 0:
+            nodes = line.replace('\n', '').split(' ')
+            print (nodes)
+            for node in nodes:
+                file.write("%s " % node)
+            file.write("\n")
+        i = i + 1
+    file.close()

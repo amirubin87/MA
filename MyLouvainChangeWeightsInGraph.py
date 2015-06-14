@@ -432,7 +432,6 @@ def __one_level(graph, mod_t_h, status, IsInL1 = False) :
                             best_increase = incr
                             best_coms = [com]
                 ############################################################
-            #todo find the bug. incr is minus..
             for best_com in best_coms :
                 __insert(node, best_com,
                         neigh_communities.get(best_com, 0.), status)
