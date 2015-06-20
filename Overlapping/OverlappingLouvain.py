@@ -3,6 +3,11 @@ __author__ = 't-amirub'
 import networkx as nx
 from GraphMetaData import *
 
+# TODO - merge communities with high amount of shared comms.
+# Implementation idea- when a node is added to two comm, add 1 in the right places ( amount of nodes in comm, amount of shared comms)
+# Keep in a different list the couples of comms who has more than (optional: 1/betta) shared nodes.
+# Merge the comms in the list.
+
 def FindCommunities(G, betta):
     metaData = Initialize_Weights(G)
     isDone = 0

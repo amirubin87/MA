@@ -3,21 +3,34 @@ import networkx as nx
 from GraphMetaData import *
 from OverlappingLouvain import *
 
+'''
 dir = "C:/cygwin64/home/t-amirub/binary_networks/"
 file = open(dir+"network.dat", "rb")
 print ("on = 2500 om =5")
 g=nx.read_edgelist(file)
 
 g= nx.convert_node_labels_to_integers(g)
+'''
+g = nx.Graph()
+g.add_edge(0,4)
+g.add_edge(0,5)
+g.add_edge(1,4)
+g.add_edge(1,5)
+g.add_edge(2,4)
+g.add_edge(2,5)
+g.add_edge(3,4)
+g.add_edge(3,5)
+
+
 
 metaData = Initialize_Weights(g)
 
-betta = 1.3
+betta = 1.1
 print(betta)
 
 myLouvain = FindCommunities(g, betta)
 print(myLouvain)
-
+'''
 from OriginalLouvain import *
 
 dendo = generate_dendrogram(g)
@@ -30,7 +43,7 @@ for node in myLouvain.keys():
         i += 1
         print("not good. node {0} is in {1} in my, but in {2} in original..".format(node, myLouvain[node],originalLouvain[node]))
 print("done i = {0}".format(i))
-
+'''
 
 '''
 mi = Calc_Modularity_Improvement(1, node, metaData)
