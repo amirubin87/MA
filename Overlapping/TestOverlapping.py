@@ -1,7 +1,7 @@
 __author__ = 't-amirub'
 import networkx as nx
 from GraphMetaData import *
-from OverlappingLouvain import *
+from OverlappingLouvainWithMergeComms import *
 
 '''
 dir = "C:/cygwin64/home/t-amirub/binary_networks/"
