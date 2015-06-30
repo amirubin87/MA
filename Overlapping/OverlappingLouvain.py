@@ -29,7 +29,7 @@ def FindCommunities(G, betta):
                 isDone += 1
             else:
                 isDone = 0
-    return RenumberComms(metaData.node2com)
+    return RenumberComms(metaData.node2coms)
 
 def RenumberComms(dictionary):
     """Renumber the comms in the values of the dictionary from 0 to n
@@ -56,7 +56,7 @@ def RenumberComms(dictionary):
 def Find_Neighbor_Comms(node, metaData, g):
     neighborComms = set()
     for neighbor in g.neighbors(node):
-        neighborComms= neighborComms.union(metaData.node2com[neighbor])
+        neighborComms= neighborComms.union(metaData.node2coms[neighbor])
     return list(neighborComms)
 
 def Initialize_Weights(G):
