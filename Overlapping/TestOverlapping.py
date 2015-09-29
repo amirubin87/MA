@@ -11,6 +11,11 @@ g=nx.read_edgelist(file)
 
 g= nx.convert_node_labels_to_integers(g)
 '''
+SLPANmi2Sum = 80
+print('SLPA ' + str(SLPANmi2Sum/10))
+for r in ("0.01", "0.05", "0.1", "0.15", "0.2", "0.25", "0.3", "0.35", "0.4", "0.45", "0.5"):
+    print(r)
+'''
 g = nx.Graph()
 g.add_edge(0,4)
 g.add_edge(0,5)
@@ -30,6 +35,7 @@ print(betta)
 
 myLouvain = FindCommunities(g, betta)
 print(myLouvain)
+'''
 '''
 from OriginalLouvain import *
 

@@ -1,3 +1,4 @@
+
 __author__ = 't-amirub'
 import itertools
 import networkx as nx
@@ -74,24 +75,40 @@ class MetaData :
                 weight = float(graph.get_edge_data(node, neighbour,{"weight":0}).get("weight", 1))
                 self.K_v_c[node][comm] = weight
 
+
+    def initWithPart(self, graph, part):
+        """Initialize the MetaData of a graph with every node in one community"""
+        self.init(graph)
+        partNode2Comm = dict()
+        commId=0
+        for comm in part:
+            for node in comm:
+                if partNode2Comm.get(node) == None:
+                    partNode2Comm[node] = []
+                partNode2Comm[node].append(commId)
+            commId+=1
+        for node in self.node2coms.keys():
+            c_v = list(self.node2coms[node])
+            self.Update_Weights_Remove(c_v, node, graph)
+            self.ClearComms(node)
+            c_v =  partNode2Comm[node]
+            self.Update_Weights_Add(c_v, node, graph)
+            self.SetCommsForNode(node, c_v)
+
     def ClearComms(self, node):
         comms = self.node2coms[node]
         for pairComms in itertools.combinations(comms,2):
             self.Intersection_c1_c2[min(pairComms)][max(pairComms)] -= 1
-
         for comm in comms:
             self.com2nodes[comm].remove(node)
             self.Size_c[comm] -= 1
-
         self.node2coms[node] = []
 
     def SetCommsForNode(self, node, comms):
         commsCouplesIntersectionRatio = []
-
         for comm in comms:
             self.com2nodes[comm].append(node)
             self.Size_c[comm] += 1
-
         for pairComms in itertools.combinations(comms, 2):
             lowComm = min(pairComms)
             highComm = max(pairComms)
@@ -109,4 +126,26 @@ class MetaData :
     def RemoveCommForNode(self, node, c1):
         self.node2coms[node].remove(c1)
         self.com2nodes[c1].remove(node)
+        for comm in self.node2coms[node]:
+            self.Intersection_c1_c2[min(comm, c1)][max(comm,c1)] -= 1
 
+
+    def Update_Weights_Remove(self, c_v, node,  g):
+        neighbors = g.neighbors(node)
+        for c in c_v:
+            self.Sigma_c[c] = self.Sigma_c[c] - self.K_v[node] + self.K_v_c[node].get(c,0)
+            for neighbour in neighbors:
+                weight = float(g.get_edge_data(node, neighbour).get("weight", 1))
+                self.K_v_c[neighbour][c] = self.K_v_c[neighbour].get(c,0) -  weight
+        self.m -= self.K_v[node]*(len(c_v) - 1)
+
+
+
+    def Update_Weights_Add(self, c_v, node, g):
+        neighbors = g.neighbors(node)
+        for c in c_v:
+            self.Sigma_c[c] = self.Sigma_c[c] + self.K_v[node] - self.K_v_c[node].get(c,0)
+            for neighbour in neighbors:
+                weight = float(g.get_edge_data(node, neighbour).get("weight", 1))
+                self.K_v_c[neighbour][c] = self.K_v_c[neighbour].get(c,0) + weight
+        self.m += self.K_v[node]*(len(c_v) - 1)
